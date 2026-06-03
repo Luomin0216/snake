@@ -1,20 +1,38 @@
 @charset "UTF-8"; 
 
-html,body {
+:root {
+	--primary-color: #ece060;
+	--dark-color: #414042;
+	--light-gray: #ddd;
+	--food-color: #990000;
+	--button-bg: rgba(188, 188, 188, .7);
+	--border-radius: 2px;
+	--shadow: 0 2px 4px rgba(0, 0, 0, .3);
+}
+
+html, body {
 	position: relative; 
 	width: 100%; 
 	max-width: 540px; 
 	height: 100%;
 	margin: 0;
 	padding: 0; 
-	background-color: #ece060;
+	background-color: var(--primary-color);
 	margin: 0 auto;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
 }
 
+/* 游戏区域 */
 .snake-game {
 	position: relative; 
 	width: 100%; 
-	height: auto; 
+	height: auto;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .snake-game canvas {
@@ -22,47 +40,82 @@ html,body {
 	top: 0;
 	left: 0;
 	width: 100%; 
-	height: auto; 
+	height: auto;
+	display: block;
 }
 
+/* 控制器容器 */
 .snake-controller {
 	position: absolute; 
 	top: 60%;
 	left: 0; 
 	width: 100%;
+	padding: 0 20px;
+	box-sizing: border-box;
 }
 
+/* 控制按钮组 */
+.snake-controls {
+	position: absolute;
+	top: 160px;
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 30px;
+	box-sizing: border-box;
+}
+
+/* 重新开始按钮 */
 .snake-switch {
-	position: absolute; 
 	width: 50px; 
 	height: 53px; 
 	background: url(../images/switch@2x.png) 0 0 no-repeat; 
 	background-size: 100% 100%; 
-	top: 160px;
-	right: 30px; 
 	border: 0 none; 
 	appearance: none; 
 	-webkit-appearance: none; 
-	outline: 0; 
+	outline: 0;
+	cursor: pointer;
+	transition: transform 0.2s ease;
 }
 
+.snake-switch:hover {
+	transform: scale(1.05);
+}
+
+.snake-switch:active {
+	transform: scale(0.95);
+}
+
+/* 暂停/继续按钮 */
 .snake-trigger {
-	position: absolute; 
 	width: 50px; 
 	height: 50px; 
 	background: url(../images/pause@2x.png) 0 0 no-repeat; 
 	background-size: 100% 100%; 
-	top: 160px;
-	left: 30px; 
 	border: 0 none; 
 	appearance: none; 
 	-webkit-appearance: none; 
-	outline: 0; 
+	outline: 0;
+	cursor: pointer;
+	transition: transform 0.2s ease;
 }
+
+.snake-trigger:hover {
+	transform: scale(1.05);
+}
+
+.snake-trigger:active {
+	transform: scale(0.95);
+}
+
 .snake-trigger:checked {
 	background-image: url(../images/play@2x.png);
 }
 
+/* 方向控制盘 */
 .snake-direction {
 	position: absolute; 
 	left: 50%; 
@@ -70,21 +123,31 @@ html,body {
 	width: 160px; 
 	height: 160px; 
 	margin-left: -80px; 
-	border: 2px solid #414042; 
-	background-color: #414042; 
+	border: 2px solid var(--dark-color);
+	background-color: var(--dark-color);
 	border-radius: 100%; 
-	overflow: hidden; 
+	overflow: hidden;
 	transform: rotateZ(45deg);
-	-webkit-transform: rotateZ(45deg); 
+	-webkit-transform: rotateZ(45deg);
+	cursor: pointer;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, .2);
+	transition: box-shadow 0.2s ease;
 }
 
+.snake-direction:hover {
+	box-shadow: 0 6px 12px rgba(0, 0, 0, .3);
+}
+
+/* 方向按钮 */
 .snake-up, .snake-right, .snake-down, .snake-left {
 	position: absolute; 
 	width: 80px; 
 	height: 80px; 
-	background-color: #ddd; 
+	background-color: var(--light-gray);
+	transition: background-color 0.15s ease;
 }
 
+/* 方向指示箭头 */
 .snake-up::after, 
 .snake-right::after, 
 .snake-down::after, 
@@ -96,10 +159,10 @@ html,body {
 	width: 10px; 
 	height: 10px; 
 	border-width: 2px 0 0 2px; 
-	border-color: #414042; 
+	border-color: var(--dark-color);
 	border-style: solid; 
 	transform-origin: left top; 
-	-webkit-transform-origin: left top; 
+	-webkit-transform-origin: left top;
 }
 
 .snake-up {
@@ -111,6 +174,7 @@ html,body {
 	top: -1px; 
 	right: -1px; 
 }
+
 .snake-right::after {
 	transform: rotate(90deg); 
 	-webkit-transform: rotate(90deg); 
@@ -136,39 +200,66 @@ html,body {
 	-webkit-transform: rotate(270deg); 
 }
 
+/* 活跃方向指示 */
 .snake-direction.up .snake-up, 
 .snake-direction.right .snake-right, 
 .snake-direction.down .snake-down, 
 .snake-direction.left .snake-left 
 {
-	background-color: rgba(188, 188, 188, .7); 
+	background-color: var(--button-bg);
 }
 
+/* 状态信息区 */
+.snake-status {
+	position: relative;
+	top: 172px;
+	text-align: center;
+}
+
+/* 游戏计时器 */
 .snake-timer {
 	position: absolute; 
-	top: 172px; 
-	right: 0; 
-	left: 0; 
-	margin: 0 auto; 
-	width: 200px; 
+	left: 0;
+	right: 0;
+	width: 200px;
+	margin: 0 auto;
 	text-align: center; 
 	font-size: 16px; 
-	font-weight: bold; 
+	font-weight: bold;
+	color: var(--dark-color);
+	letter-spacing: 0.5px;
 }
 
+/* 速度控制容器 */
+.snake-speed-container {
+	position: absolute;
+	top: 34px;
+	left: 0;
+	right: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+.snake-speed-label {
+	font-size: 12px;
+	color: var(--dark-color);
+	font-weight: 600;
+	letter-spacing: 0.5px;
+}
+
+/* 速度滑块 */
 .snake-speed {
-	position: absolute; 
-	top: 206px; 
-	right: 0; 
-	left: 0; 
-	margin: 0 auto; 
+	position: relative;
 	width: 120px; 
 	height: 4px; 
-	border-radius: 2px; 
+	border-radius: var(--border-radius);
 	background-color: #ffeeee; 
-	box-shadow: inset 1px 1px 3px -1px rgba(0, 0, 0, .3); 
+	box-shadow: inset 1px 1px 3px -1px rgba(0, 0, 0, .3);
 }
 
+/* 速度滑块拇指 */
 .snake-speed-thumb {
 	position: absolute; 
 	top: -3px; 
@@ -176,9 +267,73 @@ html,body {
 	width: 10px; 
 	height: 10px; 
 	border-radius: 100%; 
-	box-shadow: 0 2px 4px rgba(0, 0, 0, .3); 
-	background-color: #fff; 
+	box-shadow: var(--shadow);
+	background-color: #fff;
+	cursor: grab;
+	transition: box-shadow 0.2s ease;
 }
 
+.snake-speed-thumb:hover {
+	box-shadow: 0 3px 6px rgba(0, 0, 0, .4);
+}
 
+.snake-speed-thumb:active {
+	cursor: grabbing;
+}
 
+/* 响应式设计 */
+@media (max-width: 480px) {
+	html, body {
+		max-width: 100%;
+	}
+
+	.snake-direction {
+		width: 140px;
+		height: 140px;
+		margin-left: -70px;
+	}
+
+	.snake-direction .snake-up,
+	.snake-direction .snake-right,
+	.snake-direction .snake-down,
+	.snake-direction .snake-left {
+		width: 70px;
+		height: 70px;
+	}
+
+	.snake-direction::after {
+		left: 35px;
+		top: 35px;
+	}
+
+	.snake-controls {
+		padding: 0 20px;
+	}
+
+	.snake-switch,
+	.snake-trigger {
+		width: 44px;
+		height: 44px;
+	}
+
+	.snake-timer {
+		font-size: 14px;
+	}
+
+	.snake-speed {
+		width: 100px;
+	}
+}
+
+/* 无障碍焦点指示 */
+.snake-direction:focus,
+.snake-speed-thumb:focus {
+	outline: 2px solid #4A90E2;
+	outline-offset: 2px;
+}
+
+.snake-trigger:focus,
+.snake-switch:focus {
+	outline: 2px solid #4A90E2;
+	outline-offset: 2px;
+}

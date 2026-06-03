@@ -4,23 +4,46 @@
   <meta charset="utf-8" />
   <title>H5小游戏100例: 贪吃蛇</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" />
+  <meta name="description" content="贪吃蛇经典小游戏 - H5版本" />
+  <meta name="theme-color" content="#ece060" />
   <link href="css/snake.css" rel="stylesheet">
 </head>
 
 <body>
-	<div class="snake-game"></div>
-	<div class="snake-controller">
-		<div class="snake-direction">
-			<div class="snake-up"></div>
-			<div class="snake-right"></div>
-			<div class="snake-down"></div>
-			<div class="snake-left"></div>
+	<!-- 游戏画布容器 -->
+	<div class="snake-game" role="main" aria-label="贪吃蛇游戏区域"></div>
+	
+	<!-- 游戏控制器 -->
+	<div class="snake-controller" role="region" aria-label="游戏控制面板">
+		<!-- 方向控制盘 -->
+		<div class="snake-direction" role="button" tabindex="0" aria-label="方向控制盘 - 使用箭头键或触摸控制">
+			<div class="snake-up" aria-label="上"></div>
+			<div class="snake-right" aria-label="右"></div>
+			<div class="snake-down" aria-label="下"></div>
+			<div class="snake-left" aria-label="左"></div>
 		</div>
-		<input type="checkbox" class="snake-trigger" checked="checked"> 
-		<input type="button" class="snake-switch">
-		<div class="snake-timer">时间：300s</div>
-		<div class="snake-speed">
-			<div class="snake-speed-thumb"></div>
+		
+		<!-- 控制按钮 -->
+		<div class="snake-controls">
+			<!-- 暂停/继续按钮 -->
+			<input type="checkbox" class="snake-trigger" checked="checked" aria-label="暂停/继续游戏" title="点击暂停或继续游戏"> 
+			
+			<!-- 重新开始按钮 -->
+			<input type="button" class="snake-switch" aria-label="重新开始游戏" title="点击重新开始游戏">
+		</div>
+		
+		<!-- 时间和速度显示 -->
+		<div class="snake-status">
+			<!-- 游戏计时器 -->
+			<div class="snake-timer" aria-live="polite" aria-label="剩余时间">时间：300s</div>
+			
+			<!-- 游戏速度控制 -->
+			<div class="snake-speed-container" role="region" aria-label="游戏速度控制">
+				<label for="snake-speed" class="snake-speed-label">速度</label>
+				<div class="snake-speed" id="snake-speed">
+					<div class="snake-speed-thumb" role="slider" tabindex="0" aria-label="速度调节滑块" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>
