@@ -22,10 +22,13 @@ export default class control {
 		this.model = model; 
 		this.view = view; 
 
+		// 初始速度标量
+		this.speedScalar = 1;
+
 		// 挂载一个 speed 属性
 		Reflect.defineProperty(this, "speed", {
 			get: function() {
-				return this.speedScalar || 1; 
+				return this.speedScalar; 
 			}, 
 			set: function(value) { 
 				if(this.speedScalar !== value) {
@@ -129,7 +132,7 @@ export default class control {
 	// 转向
 	turn(direction) { 
 		// 只保存第一次方向操作
-		if(this.fourDirections.indexOf[direction] === -1) return; 
+		if(this.fourDirections.indexOf(direction) === -1) return; 
 		let directionA = direction, directionB = this.directions[0] || this.direction; 
 		// 给操作列表加个容积 5
 		if(this.directions.length < 5 && directionA !== directionB  && !this.isAdverse(directionA, directionB)) { 
@@ -162,7 +165,7 @@ export default class control {
 	// start
 	start() { 
 		if(this.GAMEOVER) return ;
-		// this.resume(); 
+		this.resume(); 
 		// 蛇的随机运动方向 
 		let {leader, zone} = this.model; 
 		// 控制方向的变量是 this.direction。this.nextDirection 表示下一个方向

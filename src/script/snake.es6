@@ -78,7 +78,11 @@ snakeGame.event.on("countdown", (time) => {
 
 // 游戏结束
 snakeGame.event.on("gameover", (type) => {
-	alert("游戏结束。结束类型是：" + type); 
+	let overlay = document.querySelector(".snake-gameover");
+	let msg = document.querySelector(".snake-gameover-msg");
+	let typeText = type === "timeout" ? "时间到" : (type === "bounds" ? "撞墙" : "咬到自己");
+	msg.innerHTML = `游戏结束<br>原因：${typeText}`;
+	overlay.style.display = "flex";
 }); 
 
 // 吃到东西
@@ -160,11 +164,12 @@ document.body.addEventListener("touchmove", e => e.preventDefault());
 	}); 
 
 	// 电源开关
-	let power =document.querySelector(".snake-switch"); 
+	let power = document.querySelector(".snake-switch"); 
 	power.addEventListener("click", () => {
+		let overlay = document.querySelector(".snake-gameover");
+		overlay.style.display = "none";
 		snakeGame.restart(); 
 		trigger.checked = false; 
-		trigger.click(); 
 	}); 
 
 	~function () {
@@ -209,6 +214,35 @@ document.body.addEventListener("touchmove", e => e.preventDefault());
 	}
 	window.addEventListener("keydown", keyboradUpdate); 
 	window.addEventListener("keyup", () => controller.className = "snake-direction");
+
+	// 游戏结束弹窗内的重新开始按钮
+	let restartBtn = document.querySelector(".snake-gameover-restart");
+	restartBtn.addEventListener("click", () => {
+		document.querySelector(".snake-gameover").style.display = "none";
+		snakeGame.restart();
+		trigger.checked = false;
+	});
+
+	// 游戏区域滑动手势（备用方向控制）
+	let gameArea = document.querySelector(".snake-game");
+	let swipeStartX, swipeStartY;
+	gameArea.addEventListener("touchstart", ({targetTouches: [{pageX, pageY}]}) => {
+		swipeStartX = pageX;
+		swipeStartY = pageY;
+	}, {passive: true});
+	gameArea.addEventListener("touchend", ({changedTouches: [{pageX, pageY}]}) => {
+		let dx = pageX - swipeStartX, dy = pageY - swipeStartY;
+		if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+		let direction;
+		if(Math.abs(dx) > Math.abs(dy)) {
+			direction = dx > 0 ? "right" : "left";
+		} else {
+			direction = dy > 0 ? "down" : "up";
+		}
+		snakeGame.turn(direction);
+		controller.className = "snake-direction " + direction;
+		setTimeout(() => controller.className = "snake-direction", 200);
+	}, {passive: true});
 }
 
 /* E 控制游戏 */

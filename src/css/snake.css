@@ -180,5 +180,47 @@ html,body {
 	background-color: #fff; 
 }
 
+.snake-gameover {
+	display: none; 
+	position: fixed; 
+	top: 0; 
+	left: 0; 
+	width: 100%; 
+	height: 100%; 
+	background-color: rgba(0, 0, 0, .6); 
+	align-items: center; 
+	justify-content: center; 
+	z-index: 100; 
+}
 
+.snake-gameover-box {
+	background-color: #fff; 
+	border-radius: 12px; 
+	padding: 30px 40px; 
+	text-align: center; 
+	box-shadow: 0 4px 20px rgba(0, 0, 0, .3); 
+}
+
+.snake-gameover-msg {
+	font-size: 20px; 
+	font-weight: bold; 
+	color: #414042; 
+	margin-bottom: 20px; 
+	line-height: 1.6; 
+}
+
+.snake-gameover-restart {
+	background-color: #414042; 
+	color: #ece060; 
+	border: 0 none; 
+	border-radius: 6px; 
+	padding: 10px 30px; 
+	font-size: 16px; 
+	cursor: pointer; 
+	outline: 0; 
+}
+
+.snake-gameover-restart:active {
+	opacity: .8; 
+}
 
