@@ -36,8 +36,8 @@ snakeGame.init(
 		column: 20, 
 		// 显示屏的边框
 		border: 0x414042, 
-		color: 0x414042, // 蛇的节点颜色
-		food: 0x990000, // 食物的颜色
+		color: 0x4a8f2a, // 蛇的主色（花纹、高光等会据此自动生成）
+		food: 0xd32f2f, // 食物的颜色
 		min: 4, // 初始长度
 		speed: 1.5 // 速度标量
 	}

@@ -13,6 +13,20 @@ import '../lib/utils/noHello';
 import Chain from '../lib/utils/Chain'; 
 
 
+// 按比例 t 混合两个颜色
+function mix(c1, c2, t) {
+	let r = ((c1 >> 16) & 0xff) * (1 - t) + ((c2 >> 16) & 0xff) * t, 
+		g = ((c1 >> 8) & 0xff) * (1 - t) + ((c2 >> 8) & 0xff) * t, 
+		b = (c1 & 0xff) * (1 - t) + (c2 & 0xff) * t; 
+	return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b); 
+}
+
+// 单位向量
+function unit(x, y) {
+	let len = Math.hypot(x, y) || 1; 
+	return [x / len, y / len]; 
+}
+
 // view 类
 export default class view {
 	// 构造函数
@@ -34,42 +48,6 @@ export default class view {
 
 		// 创建 view 的蛇
 		this.snake = new Chain(); 
-
-		// shift & unshift & pop & push & insertAfter 自动关联 addNode & removeNode
-		let {shift, unshift, pop, push, insertAfter} = this.snake; 
-
-		// 封闭 shift
-		this.snake.shift = () => { 
-			// 回收尾节点
-			this.collect(shift.call(this.snake).node); 
-		}
-
-		// 封装 unshift 
-		this.snake.unshift = (data) => {
-			unshift.call(this.snake, data); 
-			let node = this.snake.first().node = this.calloc(); 
-			node.setPostion(...this.getPosition(data)); 
-		}
-
-		// 封闭 pop
-		this.snake.pop = () => { 
-			// 回收尾节点
-			this.collect(pop.call(this.snake).node); 
-		}
-
-		// 封装 push 
-		this.snake.push = (data) => {
-			push.call(this.snake, data); 
-			let node = this.snake.last().node = this.calloc(); 
-			node.setPostion(...this.getPosition(data)); 
-		}
-
-		// 封装 insertAfter 
-		this.snake.insertAfter = (index, data) => {
-			insertAfter.call(this.snake, index, data); 
-			let node = this.snake.at(index + 1).node = this.calloc(); 
-			node.setPostion(...this.getPosition(data)); 
-		}
 
 		// 回收节点
 		this.collection = []; 
@@ -114,6 +92,14 @@ export default class view {
 		// 绘制边界
 		this.drawBounds(); 
 
+		// 蛇的图层：阴影 -> 身体 -> 头部
+		this.zone.addChild(this.snakeShadow = new PIXI.Graphics()); 
+		this.zone.addChild(this.snakeBody = new PIXI.Graphics()); 
+		this.zone.addChild(this.snakeHead = new PIXI.Graphics()); 
+
+		// 蛇皮配色
+		this.skin = this.createSkin(config.color); 
+
 		// 食物
 		this.food = this.calloc(); 
 		this.food.visible = false; 
@@ -132,12 +118,12 @@ export default class view {
 		// 通过 model.zone 创建一张快速定位表
 		this.createQuickMap(this.data.zone); 
 
-		let aaa = 0; 
-
 		// 同步 model 的初始数据
 		for(let {data} of this.data.snake) { 
 			this.snake.push(data); 
 		} 
+
+		this.render(); 
 
 	}
 
@@ -187,19 +173,13 @@ export default class view {
 		return this.quickMap[index]; 
 	}
 
-	// 创建节点
+	// 创建节点（食物）
 	calloc() { 
 		let node; 
 		if(this.collection.length === 0) {
 			node = new PIXI.Graphics(); 
 			let {width, height} = this.config.size; 
-			node.beginFill(this.config.color, 1)
-				.drawRect(
-					0, 
-					0,
-					width, 
-					height
-				); 
+			this.drawFood(node, width, height, this.config.food); 
 			node.pivot.set(width / 2, height / 2); 
 			node.setPostion(0); 
 		} else {
@@ -211,6 +191,20 @@ export default class view {
 		return node; 
 	}
 
+	// 绘制一个有光泽的果子
+	drawFood(g, width, height, color) {
+		let [cx, cy, r] = [width / 2, height / 2 + height * .04, Math.min(width, height) * .36]; 
+		g.clear()
+			.beginFill(0x000000, .15).drawEllipse(cx + r * .15, cy + r * .9, r * .85, r * .3).endFill()
+			.beginFill(mix(color, 0x000000, .35)).drawCircle(cx, cy, r).endFill()
+			.beginFill(color).drawCircle(cx - r * .06, cy - r * .06, r * .88).endFill()
+			.beginFill(mix(color, 0xffffff, .2)).drawCircle(cx - r * .2, cy - r * .2, r * .55).endFill()
+			.beginFill(0xffffff, .75).drawEllipse(cx - r * .38, cy - r * .42, r * .2, r * .13).endFill()
+			.lineStyle(Math.max(2, r * .14), 0x6b4423).moveTo(cx, cy - r * .8).lineTo(cx + r * .12, cy - r * 1.2)
+			.lineStyle(0)
+			.beginFill(0x4caf50).drawEllipse(cx + r * .45, cy - r * 1.05, r * .35, r * .16).endFill(); 
+	}
+
 	// 回收节点
 	collect(node) {
 		node && this.collection.push(node) & this.zone.removeChild(node); 
@@ -219,15 +213,14 @@ export default class view {
 	// 随机生成食物
 	feed(index) { 
 		this.food.visible = 1; 
-		this.food.graphicsData[0].fillColor = this.config.food; 
-		this.food.dirty++; 
-		this.food.clearDirty++; 
 		this.food.setPostion(...this.getPosition(index)); 
 	}
 
 	// ticker update
 	updateTicker() { 
-		// this.render(); 
+		if(this.snake.length === 0 || !this.snakeHead) return; 
+		this.drawHead(); 
+		this.app.renderer.render(this.app.stage); 
 	}
 
 	// 状态更新
@@ -318,7 +311,191 @@ export default class view {
 
 	// 渲染 
 	render() {
+		this.drawSnake(); 
 		this.app.renderer.render(this.app.stage);
+	}
+
+	// 根据主色生成蛇皮配色
+	createSkin(color = 0x4a8f2a) {
+		return {
+			shadow: 0xd6d9cf, 
+			outline: mix(color, 0x000000, .55), 
+			base: color, 
+			belly: mix(color, 0xffffcc, .35), 
+			pattern: mix(color, 0x000000, .4), 
+			patternEdge: mix(color, 0xfff3a0, .45), 
+			scale: mix(color, 0x000000, .22), 
+			gloss: mix(color, 0xffffff, .6), 
+			iris: 0xf4c430, 
+			tongue: 0xd7263d
+		}; 
+	}
+
+	// 蛇节点的中心坐标（从头到尾）
+	getPoints() {
+		let {width, height} = this.config.size, points = []; 
+		for(let {data} of this.snake) {
+			let [x, y] = this.getPosition(data); 
+			points.push({x: x + width / 2, y: y + height / 2}); 
+		}
+		return points; 
+	}
+
+	// 第 i 个节点的半径：身体饱满，尾部逐渐变尖
+	getRadius(i, len) {
+		let size = Math.min(this.config.size.width, this.config.size.height), 
+			r = size * .42; 
+		if(len <= 1) return r; 
+		let t = i / (len - 1); 
+		if(t > .5) r *= 1 - (t - .5) / .5 * .72; 
+		return r; 
+	}
+
+	// 用圆 + 梯形拼出一条平滑、可变粗细的管状身体
+	drawTube(g, points, radii, color, scale = 1, add = 0, dx = 0, dy = 0) {
+		g.beginFill(color); 
+		for(let i = 0; i < points.length; ++i) {
+			let {x, y} = points[i], r = radii[i] * scale + add; 
+			r > 0 && g.drawCircle(x + dx, y + dy, r); 
+			if(i === points.length - 1) break; 
+			let next = points[i + 1], 
+				rn = Math.max(0, radii[i + 1] * scale + add), 
+				[ux, uy] = unit(next.x - x, next.y - y), 
+				[nx, ny] = [-uy, ux]; 
+			g.drawPolygon([
+				x + nx * r + dx, y + ny * r + dy, 
+				next.x + nx * rn + dx, next.y + ny * rn + dy, 
+				next.x - nx * rn + dx, next.y - ny * rn + dy, 
+				x - nx * r + dx, y - ny * r + dy
+			]); 
+		}
+		g.endFill(); 
+	}
+
+	// 绘制蛇身
+	drawSnake() {
+		let {snakeShadow: shadow, snakeBody: body, skin} = this; 
+		if(!body) return; 
+		shadow.clear(); 
+		body.clear(); 
+		let points = this.getPoints(), len = points.length; 
+		if(len === 0) {
+			this.snakeHead.clear(); 
+			return; 
+		}
+		let radii = points.map((p, i) => this.getRadius(i, len)); 
+		let size = Math.min(this.config.size.width, this.config.size.height); 
+
+		// 投影
+		this.drawTube(shadow, points, radii, skin.shadow, 1, 1, size * .1, size * .16); 
+		// 描边 + 主体 + 背脊亮带
+		this.drawTube(body, points, radii, skin.outline); 
+		this.drawTube(body, points, radii, skin.base, 1, -size * .06); 
+		this.drawTube(body, points, radii, skin.belly, .42, 0, -size * .03, -size * .03); 
+
+		// 侧面鳞片：沿身体两侧交错排列
+		body.beginFill(skin.scale); 
+		for(let i = 0; i < len - 1; ++i) {
+			let [a, b] = [points[i], points[i + 1]], 
+				[ux, uy] = unit(b.x - a.x, b.y - a.y), 
+				[nx, ny] = [-uy, ux]; 
+			for(let k = 0; k < 4; ++k) {
+				let t = (k + .5) / 4, 
+					r = radii[i] + (radii[i + 1] - radii[i]) * t, 
+					[x, y] = [a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t], 
+					side = k % 2 ? 1 : -1; 
+				body.drawCircle(x + nx * r * .66 * side, y + ny * r * .66 * side, r * .13); 
+				body.drawCircle(x - nx * r * .66 * side, y - ny * r * .66 * side, r * .09); 
+			}
+		}
+		body.endFill(); 
+
+		// 背部菱形花纹（带浅色描边）
+		for(let i = 1; i < len; ++i) {
+			let {x, y} = points[i], r = radii[i], 
+				prev = points[i - 1], next = points[i + 1] || points[i], 
+				[ux, uy] = unit(next.x - prev.x, next.y - prev.y), 
+				[nx, ny] = [-uy, ux]; 
+			let diamond = (along, across) => [
+				x + ux * along, y + uy * along, 
+				x + nx * across, y + ny * across, 
+				x - ux * along, y - uy * along, 
+				x - nx * across, y - ny * across
+			]; 
+			body.beginFill(skin.patternEdge).drawPolygon(diamond(r * .78, r * .62)).endFill(); 
+			body.beginFill(skin.pattern).drawPolygon(diamond(r * .6, r * .46)).endFill(); 
+		}
+
+		// 鳞片高光
+		body.beginFill(skin.gloss); 
+		for(let i = 1; i < len; ++i) {
+			let {x, y} = points[i], r = radii[i]; 
+			body.drawEllipse(x - r * .38, y - r * .42, r * .2, r * .12); 
+		}
+		body.endFill(); 
+
+		this.drawHead(); 
+	}
+
+	// 绘制蛇头（含吐信动画），本地坐标系 x 轴朝向蛇的前进方向
+	drawHead() {
+		let {snakeHead: g, skin} = this, 
+			points = this.getPoints(); 
+		if(points.length === 0) return; 
+		let s = Math.min(this.config.size.width, this.config.size.height), 
+			[head, neck] = points, 
+			angle = neck ? Math.atan2(head.y - neck.y, head.x - neck.x) : 0; 
+		g.clear(); 
+		g.position.set(head.x, head.y); 
+		g.rotation = angle; 
+
+		// 吐信：周期性伸缩
+		let phase = (Date.now() % 1800) / 1800; 
+		if(phase < .3) {
+			let len = Math.sin(phase / .3 * Math.PI) * s * .5, 
+				tip = s * .55 + len; 
+			g.lineStyle(Math.max(1.5, s * .06), skin.tongue)
+				.moveTo(s * .45, 0).lineTo(tip, 0)
+				.lineTo(tip + len * .35, -len * .22)
+				.moveTo(tip, 0)
+				.lineTo(tip + len * .35, len * .22)
+				.lineStyle(0); 
+		}
+
+		// 头部轮廓（略呈三角的椭圆）
+		g.beginFill(skin.outline)
+			.drawEllipse(s * .12, 0, s * .52, s * .46)
+			.drawEllipse(s * .38, 0, s * .3, s * .32)
+			.endFill(); 
+		g.beginFill(skin.base)
+			.drawEllipse(s * .12, 0, s * .46, s * .4)
+			.drawEllipse(s * .38, 0, s * .25, s * .27)
+			.endFill(); 
+		// 头顶亮区 + V 形花纹
+		g.beginFill(skin.belly).drawEllipse(s * .14, 0, s * .3, s * .18).endFill(); 
+		g.beginFill(skin.pattern)
+			.drawPolygon([
+				-s * .2, -s * .2, 
+				s * .22, 0, 
+				-s * .2, s * .2, 
+				-s * .06, 0
+			])
+			.endFill(); 
+
+		// 眼睛：黄色虹膜 + 竖瞳 + 高光
+		for(let side of [-1, 1]) {
+			let [ex, ey] = [s * .26, side * s * .25]; 
+			g.beginFill(skin.outline).drawCircle(ex, ey, s * .12).endFill(); 
+			g.beginFill(skin.iris).drawCircle(ex, ey, s * .095).endFill(); 
+			g.beginFill(0x111111).drawEllipse(ex, ey, s * .065, s * .022).endFill(); 
+			g.beginFill(0xffffff).drawCircle(ex + s * .03, ey - s * .035, s * .025).endFill(); 
+		}
+
+		// 鼻孔
+		g.beginFill(skin.outline)
+			.drawCircle(s * .56, -s * .08, s * .025)
+			.drawCircle(s * .56, s * .08, s * .025)
+			.endFill(); 
 	}
 }
 
